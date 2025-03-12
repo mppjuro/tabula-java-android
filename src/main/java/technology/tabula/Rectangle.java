@@ -1,51 +1,41 @@
 package technology.tabula;
 
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
 @SuppressWarnings("serial")
-public class Rectangle extends Rectangle2D.Float {
+public class Rectangle extends AndroidRectangle {
 
-	/**
-	 * Ill-defined comparator, from when Rectangle was Comparable.
-	 * 
-	 * @see <a href="https://github.com/tabulapdf/tabula-java/issues/116">PR 116</a>
-	 * @deprecated with no replacement
-	 */
 	@Deprecated
 	public static final Comparator<Rectangle> ILL_DEFINED_ORDER = new Comparator<Rectangle>() {
-		@Override public int compare(Rectangle o1, Rectangle o2) {
+		@Override
+		public int compare(Rectangle o1, Rectangle o2) {
 			if (o1.equals(o2)) return 0;
 			if (o1.verticalOverlap(o2) > VERTICAL_COMPARISON_THRESHOLD) {
 				return o1.isLtrDominant() == -1 && o2.isLtrDominant() == -1
-				     ? - java.lang.Double.compare(o1.getX(), o2.getX())
-				     : java.lang.Double.compare(o1.getX(), o2.getX());
+						? -Float.compare(o1.getX(), o2.getX())
+						: Float.compare(o1.getX(), o2.getX());
 			} else {
-				return java.lang.Float.compare(o1.getBottom(), o2.getBottom());
+				return Float.compare(o1.getBottom(), o2.getBottom());
 			}
 		}
 	};
-	
+
 	protected static final float VERTICAL_COMPARISON_THRESHOLD = 0.4f;
 
 	public Rectangle() {
-		super();
+		super(0, 0, 0, 0);
 	}
 
 	public Rectangle(float top, float left, float width, float height) {
-		super();
-		this.setRect(left, top, width, height);
+		super(left, top, width, height);
 	}
 
 	public int compareTo(Rectangle other) {
 		return ILL_DEFINED_ORDER.compare(this, other);
 	}
 
-	// I'm bad at Java and need this for fancy sorting in
-	// technology.tabula.TextChunk.
 	public int isLtrDominant() {
 		return 0;
 	}
@@ -71,7 +61,8 @@ public class Rectangle extends Rectangle2D.Float {
 	}
 
 	public float verticalOverlapRatio(Rectangle other) {
-		float rv = 0, delta = Math.min(this.getBottom() - this.getTop(), other.getBottom() - other.getTop());
+		float rv = 0;
+		float delta = Math.min(this.getBottom() - this.getTop(), other.getBottom() - other.getTop());
 
 		if (other.getTop() <= this.getTop() && this.getTop() <= other.getBottom()
 				&& other.getBottom() <= this.getBottom()) {
@@ -88,27 +79,27 @@ public class Rectangle extends Rectangle2D.Float {
 		}
 
 		return rv;
-
 	}
 
 	public float overlapRatio(Rectangle other) {
-		double intersectionWidth = Math.max(0,
+		float intersectionWidth = Math.max(0,
 				Math.min(this.getRight(), other.getRight()) - Math.max(this.getLeft(), other.getLeft()));
-		double intersectionHeight = Math.max(0,
+		float intersectionHeight = Math.max(0,
 				Math.min(this.getBottom(), other.getBottom()) - Math.max(this.getTop(), other.getTop()));
-		double intersectionArea = Math.max(0, intersectionWidth * intersectionHeight);
-		double unionArea = this.getArea() + other.getArea() - intersectionArea;
+		float intersectionArea = Math.max(0, intersectionWidth * intersectionHeight);
+		float unionArea = this.getArea() + other.getArea() - intersectionArea;
 
-		return (float) (intersectionArea / unionArea);
+		return intersectionArea / unionArea;
 	}
 
 	public Rectangle merge(Rectangle other) {
-		this.setRect(this.createUnion(other));
+		AndroidRectangle union = this.createUnion(other);
+		this.setRect(union.x, union.y, union.width, union.height);
 		return this;
 	}
 
 	public float getTop() {
-		return (float) this.getMinY();
+		return this.y;
 	}
 
 	public void setTop(float top) {
@@ -117,7 +108,7 @@ public class Rectangle extends Rectangle2D.Float {
 	}
 
 	public float getRight() {
-		return (float) this.getMaxX();
+		return this.x + this.width;
 	}
 
 	public void setRight(float right) {
@@ -125,7 +116,7 @@ public class Rectangle extends Rectangle2D.Float {
 	}
 
 	public float getLeft() {
-		return (float) this.getMinX();
+		return this.x;
 	}
 
 	public void setLeft(float left) {
@@ -134,45 +125,40 @@ public class Rectangle extends Rectangle2D.Float {
 	}
 
 	public float getBottom() {
-		return (float) this.getMaxY();
+		return this.y + this.height;
 	}
 
 	public void setBottom(float bottom) {
 		this.setRect(this.x, this.y, this.width, bottom - this.y);
 	}
 
-	public Point2D[] getPoints() {
-		return new Point2D[] { new Point2D.Float(this.getLeft(), this.getTop()),
-				new Point2D.Float(this.getRight(), this.getTop()), new Point2D.Float(this.getRight(), this.getBottom()),
-				new Point2D.Float(this.getLeft(), this.getBottom()) };
+	public AndroidPoint[] getPoints() {
+		return new AndroidPoint[] {
+				new AndroidPoint(this.getLeft(), this.getTop()),
+				new AndroidPoint(this.getRight(), this.getTop()),
+				new AndroidPoint(this.getRight(), this.getBottom()),
+				new AndroidPoint(this.getLeft(), this.getBottom())
+		};
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		String s = super.toString();
-		sb.append(s.substring(0, s.length() - 1));
-		sb.append(String.format(Locale.US, ",bottom=%f,right=%f]", this.getBottom(), this.getRight()));
-		return sb.toString();
+		return String.format(Locale.US, "Rectangle[x=%f, y=%f, width=%f, height=%f, bottom=%f, right=%f]",
+				this.x, this.y, this.width, this.height, this.getBottom(), this.getRight());
 	}
 
-	/**
-	 * @param rectangles
-	 * @return minimum bounding box that contains all the rectangles
-	 */
 	public static Rectangle boundingBoxOf(List<? extends Rectangle> rectangles) {
-		float minx = java.lang.Float.MAX_VALUE;
-		float miny = java.lang.Float.MAX_VALUE;
-		float maxx = java.lang.Float.MIN_VALUE;
-		float maxy = java.lang.Float.MIN_VALUE;
+		float minx = Float.MAX_VALUE;
+		float miny = Float.MAX_VALUE;
+		float maxx = Float.MIN_VALUE;
+		float maxy = Float.MIN_VALUE;
 
 		for (Rectangle r : rectangles) {
-			minx = (float) Math.min(r.getMinX(), minx);
-			miny = (float) Math.min(r.getMinY(), miny);
-			maxx = (float) Math.max(r.getMaxX(), maxx);
-			maxy = (float) Math.max(r.getMaxY(), maxy);
+			minx = Math.min(r.getLeft(), minx);
+			miny = Math.min(r.getTop(), miny);
+			maxx = Math.max(r.getRight(), maxx);
+			maxy = Math.max(r.getBottom(), maxy);
 		}
 		return new Rectangle(miny, minx, maxx - minx, maxy - miny);
 	}
-
 }
