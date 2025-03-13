@@ -57,6 +57,10 @@
             <url>https://maven.google.com/</url>
             <layout>default</layout>
         </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <scm>
@@ -275,6 +279,8 @@
             <groupId>com.tom-roush</groupId>
             <artifactId>pdfbox-android</artifactId>
             <version>2.0.27.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/pdfbox-android.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>org.locationtech.jts</groupId>
