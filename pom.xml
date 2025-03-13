@@ -48,10 +48,15 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-            <repository>
-                <id>jcenter</id>
-                <url>https://jcenter.bintray.com/</url>
-            </repository>
+        <repository>
+            <id>jcenter</id>
+            <url>https://jcenter.bintray.com/</url>
+        </repository>
+        <repository>
+            <id>google</id>
+            <url>https://maven.google.com/</url>
+            <layout>default</layout>
+        </repository>
     </repositories>
 
     <scm>
@@ -64,6 +69,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <android.sdk>/usr/lib/android-sdk</android.sdk>
     </properties>
 
     <distributionManagement>
@@ -239,6 +245,31 @@
         </profile>
     </profiles>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>androidx.lifecycle</groupId>
+                <artifactId>lifecycle-common</artifactId>
+                <version>2.5.1</version>
+            </dependency>
+            <dependency>
+                <groupId>androidx.lifecycle</groupId>
+                <artifactId>lifecycle-runtime</artifactId>
+                <version>2.5.1</version>
+            </dependency>
+            <dependency>
+                <groupId>androidx.lifecycle</groupId>
+                <artifactId>lifecycle-viewmodel-savedstate</artifactId>
+                <version>2.5.1</version>
+            </dependency>
+            <dependency>
+                <groupId>androidx.lifecycle</groupId>
+                <artifactId>lifecycle-process</artifactId>
+                <version>2.5.1</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>com.tom-roush</groupId>
@@ -319,11 +350,52 @@
         </dependency>
 
         <dependency>
-            <groupId>android</groupId>
+            <groupId>androidx.core</groupId>
+            <artifactId>core</artifactId>
+            <version>1.12.0</version>
+            <type>aar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>androidx.appcompat</groupId>
+            <artifactId>appcompat</artifactId>
+            <version>1.6.1</version>
+            <type>aar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>androidx.lifecycle</groupId>
+            <artifactId>lifecycle-common</artifactId>
+            <version>2.5.1</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>androidx.lifecycle</groupId>
+            <artifactId>lifecycle-runtime</artifactId>
+            <version>2.5.1</version>
+            <type>aar</type>
+        </dependency>
+        <dependency>
+            <groupId>androidx.lifecycle</groupId>
+            <artifactId>lifecycle-viewmodel-savedstate</artifactId>
+            <version>2.5.1</version>
+            <type>aar</type>
+        </dependency>
+        <dependency>
+            <groupId>androidx.annotation</groupId>
+            <artifactId>annotation</artifactId>
+            <version>1.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.android</groupId>
             <artifactId>android</artifactId>
-            <version>35.0.0</version>
-            <scope>system</scope>
-            <systemPath>C:/Users/PJURO/AppData/Local/Android/Sdk/platforms/android-35/android.jar</systemPath>
+            <version>4.1.1.4</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
