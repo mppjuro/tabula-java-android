@@ -1,38 +1,21 @@
 package technology.tabula;
 
-import java.awt.Shape;
-import java.awt.geom.Line2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
-import org.apache.commons.cli.ParseException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import java.io.IOException;
 
-/**
- * @author manuel
- */
 public class Utils {
+    private final static float EPSILON = 0.01f;
+
     public static boolean within(double first, double second, double variance) {
         return second < first + variance && second > first - variance;
     }
-
-    public static boolean overlap(double y1, double height1, double y2, double height2, double variance) {
-        return within(y1, y2, variance) || (y2 <= y1 && y2 >= y1 - height1) || (y1 <= y2 && y1 >= y2 - height2);
-    }
-
-    public static boolean overlap(double y1, double height1, double y2, double height2) {
-        return overlap(y1, height1, y2, height2, 0.1f);
-    }
-
-    private final static float EPSILON = 0.01f;
-    protected static boolean useQuickSort = useCustomQuickSort();
 
     public static boolean feq(double f1, double f2) {
         return (Math.abs(f1 - f2) < EPSILON);
@@ -44,24 +27,6 @@ public class Utils {
         return bd.floatValue();
     }
 
-    public static Rectangle bounds(Collection<? extends Shape> shapes) {
-        if (shapes.isEmpty()) {
-            throw new IllegalArgumentException("shapes can't be empty");
-        }
-
-        Iterator<? extends Shape> iter = shapes.iterator();
-        Rectangle rv = new Rectangle();
-        rv.setRect(iter.next().getBounds2D());
-
-        while (iter.hasNext()) {
-            Rectangle2D.union(iter.next().getBounds2D(), rv, rv);
-        }
-
-        return rv;
-
-    }
-
-    // range iterator
     public static List<Integer> range(final int begin, final int end) {
         return new AbstractList<Integer>() {
             @Override
@@ -76,8 +41,143 @@ public class Utils {
         };
     }
 
+    public static <T extends Comparable<? super T>> void sort(List<T> list) {
+        Collections.sort(list);
+    }
 
-    /* from apache.commons-lang */
+    public static <T> void sort(List<T> list, Comparator<? super T> comparator) {
+        Collections.sort(list, comparator);
+    }
+
+    public static BufferedImage pageConvertToImage(PDDocument doc, PDPage page, int dpi, ImageType imageType) throws IOException {
+        PDFRenderer renderer = new PDFRenderer(doc);
+        return renderer.renderImageWithDPI(doc.getPages().indexOf(page), dpi, imageType);
+    }
+
+    /**
+     * Przekształca punkty `start` i `end` dla każdego `Ruling`, aby wyrównać blisko położone linie
+     */
+    public static void snapRulings(List<Ruling> rulings, float xThreshold, float yThreshold) {
+        List<Point2D> points = new ArrayList<>();
+        Map<Ruling, Point2D[]> rulingToPoints = new HashMap<>();
+
+        // Pobranie wszystkich punktów startowych i końcowych
+        for (Ruling r : rulings) {
+            Point2D p1 = r.getStartPoint();
+            Point2D p2 = r.getEndPoint();
+            rulingToPoints.put(r, new Point2D[]{p1, p2});
+            points.add(p1);
+            points.add(p2);
+        }
+
+        // Grupowanie i wyrównywanie punktów w osi X
+        snapPointsByAxis(points, xThreshold, true);
+        // Grupowanie i wyrównywanie punktów w osi Y
+        snapPointsByAxis(points, yThreshold, false);
+
+        // Aktualizacja rulings po wyrównaniu punktów
+        for (Map.Entry<Ruling, Point2D[]> entry : rulingToPoints.entrySet()) {
+            Point2D[] updatedPoints = entry.getValue();
+            entry.getKey().setStartPoint(updatedPoints[0]);
+            entry.getKey().setEndPoint(updatedPoints[1]);
+        }
+    }
+
+    /**
+     * Grupowanie punktów w osi X lub Y i wyrównanie ich do średniej wartości
+     */
+    private static void snapPointsByAxis(List<Point2D> points, float threshold, boolean isXAxis) {
+        points.sort(Comparator.comparingDouble(p -> isXAxis ? p.getX() : p.getY()));
+
+        List<List<Point2D>> groupedPoints = new ArrayList<>();
+        groupedPoints.add(new ArrayList<>(Collections.singletonList(points.get(0))));
+
+        for (Point2D p : points.subList(1, points.size())) {
+            List<Point2D> lastGroup = groupedPoints.get(groupedPoints.size() - 1);
+            if (Math.abs((isXAxis ? p.getX() : p.getY()) - (isXAxis ? lastGroup.get(0).getX() : lastGroup.get(0).getY())) < threshold) {
+                lastGroup.add(p);
+            } else {
+                groupedPoints.add(new ArrayList<>(Collections.singletonList(p)));
+            }
+        }
+
+        for (List<Point2D> group : groupedPoints) {
+            float avgLoc = 0;
+            for (Point2D p : group) {
+                avgLoc += isXAxis ? p.getX() : p.getY();
+            }
+            avgLoc /= group.size();
+
+            for (Point2D p : group) {
+                if (isXAxis) {
+                    p.setX(avgLoc);
+                } else {
+                    p.setY(avgLoc);
+                }
+            }
+        }
+    }
+
+    public static List<List<Point2D>> getPolygonsFromEdges(Map<Point2D, Point2D> edgesH, Map<Point2D, Point2D> edgesV) {
+        List<List<Point2D>> polygons = new ArrayList<>();
+        Set<Point2D> visited = new HashSet<>();
+
+        for (Point2D start : edgesH.keySet()) {
+            if (visited.contains(start)) continue;
+
+            List<Point2D> polygon = new ArrayList<>();
+            Point2D current = start;
+
+            while (current != null && !visited.contains(current)) {
+                polygon.add(current);
+                visited.add(current);
+
+                current = edgesH.get(current);
+                if (current == null) break;
+
+                polygon.add(current);
+                visited.add(current);
+
+                current = edgesV.get(current);
+            }
+
+            if (!polygon.isEmpty()) {
+                polygons.add(polygon);
+            }
+        }
+
+        return polygons;
+    }
+
+    public static List<Integer> parsePagesOption(String pagesSpec) {
+        if (pagesSpec.equals("all")) {
+            return null;
+        }
+
+        List<Integer> rv = new ArrayList<>();
+        String[] ranges = pagesSpec.split(",");
+        for (String range : ranges) {
+            String[] r = range.split("-");
+            if (r.length == 0 || !isNumeric(r[0]) || (r.length > 1 && !isNumeric(r[1]))) {
+                throw new IllegalArgumentException("Syntax error in page range specification");
+            }
+
+            if (r.length < 2) {
+                rv.add(Integer.parseInt(r[0]));
+            } else {
+                int t = Integer.parseInt(r[0]);
+                int f = Integer.parseInt(r[1]);
+                if (t > f) {
+                    throw new IllegalArgumentException("Syntax error in page range specification");
+                }
+                rv.addAll(range(t, f + 1));
+            }
+        }
+
+        Collections.sort(rv);
+        return rv;
+    }
+
     public static boolean isNumeric(final CharSequence cs) {
         if (cs == null || cs.length() == 0) {
             return false;
@@ -91,198 +191,94 @@ public class Utils {
         return true;
     }
 
-    public static String join(String glue, String... s) {
-        int k = s.length;
-        if (k == 0) {
-            return null;
+    public static String join(String delimiter, String... elements) {
+        if (elements == null || elements.length == 0) {
+            return "";
         }
-        StringBuilder out = new StringBuilder();
-        out.append(s[0]);
-        for (int x = 1; x < k; ++x) {
-            out.append(glue).append(s[x]);
-        }
-        return out.toString();
+        return String.join(delimiter, elements);
     }
 
-    public static <T> List<List<T>> transpose(List<List<T>> table) {
-        List<List<T>> ret = new ArrayList<>();
-        final int N = table.get(0).size();
-        for (int i = 0; i < N; i++) {
-            List<T> col = new ArrayList<>();
-            for (List<T> row : table) {
-                col.add(row.get(i));
-            }
-            ret.add(col);
-        }
-        return ret;
-    }
-
-	/**
-	 * Wrap Collections.sort so we can fallback to a non-stable quicksort if we're
-	 * running on JDK7+
-	 */
-	public static <T extends Comparable<? super T>> void sort(List<T> list) {
-		if (useQuickSort) QuickSort.sort(list);
-		else              Collections.sort(list);
-	}
-
-	public static <T> void sort(List<T> list, Comparator<? super T> comparator) {
-		if (useQuickSort) QuickSort.sort(list, comparator);
-		else              Collections.sort(list, comparator);
-	}
-
-    private static boolean useCustomQuickSort() {
-        // taken from PDFBOX:
-
-        // check if we need to use the custom quicksort algorithm as a
-        // workaround to the transitivity issue of TextPositionComparator:
-        // https://issues.apache.org/jira/browse/PDFBOX-1512
-
-        String numberybits = System.getProperty("java.version").split(
-                "-")[0]; // some Java version strings are 9-internal, which is dumb.
-        String[] versionComponents = numberybits.split(
-                "\\.");
-        int javaMajorVersion;
-        int javaMinorVersion;
-        if (versionComponents.length >= 2) {
-            javaMajorVersion = Integer.parseInt(versionComponents[0]);
-            javaMinorVersion = Integer.parseInt(versionComponents[1]);
-        } else {
-            javaMajorVersion = 1;
-            javaMinorVersion = Integer.parseInt(versionComponents[0]);
-        }
-        boolean is16orLess = javaMajorVersion == 1 && javaMinorVersion <= 6;
-        String useLegacySort = System.getProperty("java.util.Arrays.useLegacyMergeSort");
-        return !is16orLess || (useLegacySort != null && useLegacySort.equals("true"));
-    }
-
-
-    public static List<Integer> parsePagesOption(String pagesSpec) throws ParseException {
-        if (pagesSpec.equals("all")) {
-            return null;
+    public static void snapPoints(List<Point2D> points, float xThreshold, float yThreshold) {
+        if (points == null || points.isEmpty()) {
+            return;
         }
 
-        List<Integer> rv = new ArrayList<>();
+        // Sortowanie według X
+        points.sort(Comparator.comparingDouble(Point2D::getX));
 
-        String[] ranges = pagesSpec.split(",");
-        for (int i = 0; i < ranges.length; i++) {
-            String[] r = ranges[i].split("-");
-            if (r.length == 0 || !Utils.isNumeric(r[0]) || r.length > 1 && !Utils.isNumeric(r[1])) {
-                throw new ParseException("Syntax error in page range specification");
-            }
-
-            if (r.length < 2) {
-                rv.add(Integer.parseInt(r[0]));
+        // Grupowanie i "przyciąganie" punktów X
+        List<List<Point2D>> groupedX = new ArrayList<>();
+        for (Point2D p : points) {
+            if (!groupedX.isEmpty() && Math.abs(p.getX() - groupedX.get(groupedX.size() - 1).get(0).getX()) < xThreshold) {
+                groupedX.get(groupedX.size() - 1).add(p);
             } else {
-                int t = Integer.parseInt(r[0]);
-                int f = Integer.parseInt(r[1]);
-                if (t > f) {
-                    throw new ParseException("Syntax error in page range specification");
-                }
-                rv.addAll(Utils.range(t, f + 1));
+                groupedX.add(new ArrayList<>(Collections.singletonList(p)));
             }
         }
 
-        Collections.sort(rv);
-        return rv;
+        // Uśrednienie i aktualizacja wartości X
+        for (List<Point2D> group : groupedX) {
+            float avgX = (float) group.stream().mapToDouble(Point2D::getX).average().orElse(0);
+            for (Point2D p : group) {
+                p.setX(avgX);
+            }
+        }
+
+        // Sortowanie według Y
+        points.sort(Comparator.comparingDouble(Point2D::getY));
+
+        // Grupowanie i "przyciąganie" punktów Y
+        List<List<Point2D>> groupedY = new ArrayList<>();
+        for (Point2D p : points) {
+            if (!groupedY.isEmpty() && Math.abs(p.getY() - groupedY.get(groupedY.size() - 1).get(0).getY()) < yThreshold) {
+                groupedY.get(groupedY.size() - 1).add(p);
+            } else {
+                groupedY.add(new ArrayList<>(Collections.singletonList(p)));
+            }
+        }
+
+        // Uśrednienie i aktualizacja wartości Y
+        for (List<Point2D> group : groupedY) {
+            float avgY = (float) group.stream().mapToDouble(Point2D::getY).average().orElse(0);
+            for (Point2D p : group) {
+                p.setY(avgY);
+            }
+        }
     }
 
-    public static void snapPoints(List<? extends Line2D.Float> rulings, float xThreshold, float yThreshold) {
+    public static void snapPointPairs(List<Point2D[]> pointPairs, float xThreshold, float yThreshold) {
+        if (pointPairs == null || pointPairs.isEmpty()) return;
 
-        // collect points and keep a Line -> p1,p2 map
-        Map<Line2D.Float, Point2D[]> linesToPoints = new HashMap<>();
         List<Point2D> points = new ArrayList<>();
-        for (Line2D.Float r : rulings) {
-            Point2D p1 = r.getP1();
-            Point2D p2 = r.getP2();
-            linesToPoints.put(r, new Point2D[]{p1, p2});
-            points.add(p1);
-            points.add(p2);
+        for (Point2D[] pair : pointPairs) {
+            points.add(pair[0]);
+            points.add(pair[1]);
         }
 
-        // snap by X
-        Collections.sort(points, new Comparator<Point2D>() {
-            @Override
-            public int compare(Point2D arg0, Point2D arg1) {
-                return java.lang.Double.compare(arg0.getX(), arg1.getX());
-            }
-        });
-
-        List<List<Point2D>> groupedPoints = new ArrayList<>();
-        groupedPoints.add(new ArrayList<>(Arrays.asList(new Point2D[]{points.get(0)})));
-
-        for (Point2D p : points.subList(1, points.size() - 1)) {
-            List<Point2D> last = groupedPoints.get(groupedPoints.size() - 1);
-            if (Math.abs(p.getX() - last.get(0).getX()) < xThreshold) {
-                groupedPoints.get(groupedPoints.size() - 1).add(p);
-            } else {
-                groupedPoints.add(new ArrayList<>(Arrays.asList(new Point2D[]{p})));
-            }
-        }
-
-        for (List<Point2D> group : groupedPoints) {
-            float avgLoc = 0;
-            for (Point2D p : group) {
-                avgLoc += p.getX();
-            }
-            avgLoc /= group.size();
-            for (Point2D p : group) {
-                p.setLocation(avgLoc, p.getY());
-            }
-        }
-        // ---
-
-        // snap by Y
-        Collections.sort(points, new Comparator<Point2D>() {
-            @Override
-            public int compare(Point2D arg0, Point2D arg1) {
-                return java.lang.Double.compare(arg0.getY(), arg1.getY());
-            }
-        });
-
-        groupedPoints = new ArrayList<>();
-        groupedPoints.add(new ArrayList<>(Arrays.asList(new Point2D[]{points.get(0)})));
-
-        for (Point2D p : points.subList(1, points.size() - 1)) {
-            List<Point2D> last = groupedPoints.get(groupedPoints.size() - 1);
-            if (Math.abs(p.getY() - last.get(0).getY()) < yThreshold) {
-                groupedPoints.get(groupedPoints.size() - 1).add(p);
-            } else {
-                groupedPoints.add(new ArrayList<>(Arrays.asList(new Point2D[]{p})));
-            }
-        }
-
-        for (List<Point2D> group : groupedPoints) {
-            float avgLoc = 0;
-            for (Point2D p : group) {
-                avgLoc += p.getY();
-            }
-            avgLoc /= group.size();
-            for (Point2D p : group) {
-                p.setLocation(p.getX(), avgLoc);
-            }
-        }
-        // ---
-
-        // finally, modify lines
-        for (Map.Entry<Line2D.Float, Point2D[]> ltp : linesToPoints.entrySet()) {
-            Point2D[] p = ltp.getValue();
-            ltp.getKey().setLine(p[0], p[1]);
-        }
+        snapPoints(points, xThreshold, yThreshold);
     }
 
-	public static BufferedImage pageConvertToImage(PDPage page, int dpi, ImageType imageType) throws IOException {
-		try (PDDocument document = new PDDocument()) {
-			document.addPage(page);
-			PDFRenderer renderer = new PDFRenderer(document);
-			document.close();
-			return renderer.renderImageWithDPI(0, dpi, imageType);
-		}
-	}
+    public static Rectangle bounds(Collection<? extends Rectangle> rectangles) {
+        if (rectangles == null || rectangles.isEmpty()) {
+            return new Rectangle();
+        }
 
-  public static BufferedImage pageConvertToImage(PDDocument doc, PDPage page, int dpi, ImageType imageType) throws IOException {
-    PDFRenderer renderer = new PDFRenderer(doc);
-    return renderer.renderImageWithDPI(doc.getPages().indexOf(page), dpi, imageType);
-  }
+        float minX = Float.MAX_VALUE;
+        float minY = Float.MAX_VALUE;
+        float maxX = Float.MIN_VALUE;
+        float maxY = Float.MIN_VALUE;
 
+        for (Rectangle rect : rectangles) {
+            minX = Math.min(minX, rect.getLeft());
+            minY = Math.min(minY, rect.getTop());
+            maxX = Math.max(maxX, rect.getRight());
+            maxY = Math.max(maxY, rect.getBottom());
+        }
+
+        return new Rectangle(minY, minX, maxX - minX, maxY - minY);
+    }
+
+    public static boolean overlap(float y1, float height1, float y2, float height2) {
+        return (y1 < y2 + height2) && (y1 + height1 > y2);
+    }
 }

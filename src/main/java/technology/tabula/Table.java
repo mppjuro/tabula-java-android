@@ -101,5 +101,4 @@ class CellPosition implements Comparable<CellPosition> {
 		int rowdiff = row - other.row;
 		return rowdiff != 0 ? rowdiff : col - other.col;
 	}
-
 }

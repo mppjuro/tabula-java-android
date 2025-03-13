@@ -34,12 +34,7 @@ public class RectangleSpatialIndex<T extends Rectangle> {
     public List<T> intersects(Rectangle r) {
       return si.query(new Envelope(r.getLeft(), r.getRight(), r.getTop(), r.getBottom()));
     }
-    
-    /**
-     * Minimum bounding box of all the Rectangles contained on this RectangleSpatialIndex
-     * 
-     * @return a Rectangle
-     */
+
     public Rectangle getBounds() {
         return Rectangle.boundingBoxOf(rectangles);
     }

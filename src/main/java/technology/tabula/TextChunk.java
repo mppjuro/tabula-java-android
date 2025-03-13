@@ -17,7 +17,7 @@ public class TextChunk extends RectangularTextContainer<TextElement> {
     }
 
     public TextChunk(TextElement textElement) {
-        super(textElement.y, textElement.x, textElement.width, textElement.height);
+        super(textElement.getTop(), textElement.getLeft(), textElement.getWidth(), textElement.getHeight());
         this.add(textElement);
     }
 
@@ -360,4 +360,11 @@ public class TextChunk extends RectangularTextContainer<TextElement> {
         return rv;
     }
 
+    public float getWidth() {
+        return getRight() - getLeft();
+    }
+
+    public float getHeight() {
+        return getBottom() - getTop();
+    }
 }

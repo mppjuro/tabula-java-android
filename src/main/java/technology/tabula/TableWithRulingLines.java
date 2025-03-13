@@ -16,7 +16,7 @@ public class TableWithRulingLines extends Table {
     
     public TableWithRulingLines(Rectangle area, List<Cell> cells, List<Ruling> horizontalRulings, List<Ruling> verticalRulings, ExtractionAlgorithm extractionAlgorithm, int pageNumber) {
         super(extractionAlgorithm);
-        this.setRect(area);
+        this.setBounds(area);
         this.verticalRulings = verticalRulings;
         this.horizontalRulings = horizontalRulings;
         this.addCells(cells);

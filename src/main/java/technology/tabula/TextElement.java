@@ -21,8 +21,7 @@ public class TextElement extends Rectangle implements HasText {
 
     public TextElement(float y, float x, float width, float height,
                        PDFont font, float fontSize, String c, float widthOfSpace, float dir) {
-        super();
-        this.setRect(x, y, width, height);
+        super(y, x, width, height);
         this.text = c;
         this.widthOfSpace = widthOfSpace;
         this.fontSize = fontSize;
@@ -54,6 +53,14 @@ public class TextElement extends Rectangle implements HasText {
 
     public float getFontSize() {
         return fontSize;
+    }
+
+    public float getWidth() {
+        return super.getRight() - super.getLeft();
+    }
+
+    public float getHeight() {
+        return super.getBottom() - super.getTop();
     }
 
     @Override public String toString() {
@@ -167,7 +174,8 @@ public class TextElement extends Rectangle implements HasText {
             for (Ruling r : verticalRulings) {
                 if (
                         (verticallyOverlapsRuling(prevChar, r) && verticallyOverlapsRuling(chr, r)) &&
-                                (prevChar.x < r.getPosition() && chr.x > r.getPosition()) || (prevChar.x > r.getPosition() && chr.x < r.getPosition())
+                                ((prevChar.getLeft() < r.getPosition() && chr.getLeft() > r.getPosition()) ||
+                                        (prevChar.getLeft() > r.getPosition() && chr.getLeft() < r.getPosition()))
                         ) {
                     acrossVerticalRuling = true;
                     break;
@@ -271,7 +279,7 @@ public class TextElement extends Rectangle implements HasText {
     }
 
     private static boolean verticallyOverlapsRuling(TextElement te, Ruling r) {
-        return Math.max(0, Math.min(te.getBottom(), r.getY2()) - Math.max(te.getTop(), r.getY1())) > 0;
+        return Math.max(0, Math.min(te.getBottom(), r.getEnd().getY()) - Math.max(te.getTop(), r.getStart().getY())) > 0;
     }
 
 }

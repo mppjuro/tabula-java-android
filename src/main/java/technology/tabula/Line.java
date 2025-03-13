@@ -3,8 +3,6 @@ package technology.tabula;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO this class seems superfluous - get rid of it
-
 @SuppressWarnings("serial")
 public class Line extends Rectangle {
 
@@ -40,14 +38,14 @@ public class Line extends Rectangle {
 
     public void addTextChunk(TextChunk textChunk) {
         if (this.textChunks.isEmpty()) {
-            this.setRect(textChunk);
+            this.setBounds(textChunk); // Zamiast setRect(), używamy setBounds()
         }
         else {
             this.merge(textChunk);
         }
         this.textChunks.add(textChunk);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
