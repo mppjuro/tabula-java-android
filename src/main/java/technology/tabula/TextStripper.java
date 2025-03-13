@@ -1,12 +1,12 @@
 package technology.tabula;
 
-import org.apache.fontbox.util.BoundingBox;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.font.PDFont;
-import org.apache.pdfbox.pdmodel.font.PDFontDescriptor;
-import org.apache.pdfbox.pdmodel.font.PDType3Font;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.apache.pdfbox.text.TextPosition;
+import com.tom_roush.fontbox.util.BoundingBox;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.pdmodel.font.PDFont;
+import com.tom_roush.pdfbox.pdmodel.font.PDFontDescriptor;
+import com.tom_roush.pdfbox.pdmodel.font.PDType3Font;
+import com.tom_roush.pdfbox.text.PDFTextStripper;
+import com.tom_roush.pdfbox.text.TextPosition;
 
 import java.io.IOException;
 import java.util.ArrayList;

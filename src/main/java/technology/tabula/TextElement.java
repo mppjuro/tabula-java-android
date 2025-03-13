@@ -3,7 +3,7 @@ package technology.tabula;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.pdfbox.pdmodel.font.PDFont;
+import com.tom_roush.pdfbox.pdmodel.font.PDFont;
 
 @SuppressWarnings("serial")
 public class TextElement extends Rectangle implements HasText {

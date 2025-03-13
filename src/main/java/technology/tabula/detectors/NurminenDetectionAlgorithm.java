@@ -1,14 +1,13 @@
 package technology.tabula.detectors;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.common.PDStream;
-import org.apache.pdfbox.pdfparser.PDFStreamParser;
-import org.apache.pdfbox.cos.COSName;
-import org.apache.pdfbox.contentstream.operator.Operator;
-import org.apache.pdfbox.contentstream.operator.OperatorName;
-import org.apache.pdfbox.contentstream.PDContentStream;
-import org.apache.pdfbox.pdfwriter.ContentStreamWriter;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.pdmodel.PDPage;
+import com.tom_roush.pdfbox.pdmodel.common.PDStream;
+import com.tom_roush.pdfbox.pdfparser.PDFStreamParser;
+import com.tom_roush.pdfbox.contentstream.operator.Operator;
+import com.tom_roush.pdfbox.contentstream.operator.OperatorName;
+import com.tom_roush.pdfbox.contentstream.PDContentStream;
+import com.tom_roush.pdfbox.pdfwriter.ContentStreamWriter;
 
 import technology.tabula.*;
 import technology.tabula.extractors.SpreadsheetExtractionAlgorithm;
@@ -138,24 +137,6 @@ public class NurminenDetectionAlgorithm implements DetectionAlgorithm {
         }
 
         return tableAreas;
-    }
-
-    private PDDocument removeText(PDPage page) throws IOException {
-        PDFStreamParser parser = new PDFStreamParser(page);
-        parser.parse();
-
-        PDDocument document = new PDDocument();
-        PDPage newPage = document.importPage(page);
-        newPage.setResources(page.getResources());
-
-        PDStream newContents = new PDStream(document);
-        OutputStream out = newContents.createOutputStream(COSName.FLATE_DECODE);
-        ContentStreamWriter writer = new ContentStreamWriter(out);
-        List<Object> tokensWithoutText = createTokensWithoutText(page);
-        writer.writeTokens(tokensWithoutText);
-        out.close();
-        newPage.setContents(newContents);
-        return document;
     }
 
     private static List<Object> createTokensWithoutText(PDContentStream contentStream) throws IOException {

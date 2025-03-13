@@ -2,8 +2,8 @@ package technology.tabula;
 
 import java.io.IOException;
 import java.util.List;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.pdmodel.PDPage;
 
 public class ObjectExtractor implements java.io.Closeable {
 

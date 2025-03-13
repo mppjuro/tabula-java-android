@@ -4,10 +4,10 @@ import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.util.*;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.rendering.ImageType;
-import org.apache.pdfbox.rendering.PDFRenderer;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.pdmodel.PDPage;
+import com.tom_roush.pdfbox.rendering.ImageType;
+import com.tom_roush.pdfbox.rendering.PDFRenderer;
 import java.io.IOException;
 
 public class Utils {
@@ -47,11 +47,6 @@ public class Utils {
 
     public static <T> void sort(List<T> list, Comparator<? super T> comparator) {
         Collections.sort(list, comparator);
-    }
-
-    public static BufferedImage pageConvertToImage(PDDocument doc, PDPage page, int dpi, ImageType imageType) throws IOException {
-        PDFRenderer renderer = new PDFRenderer(doc);
-        return renderer.renderImageWithDPI(doc.getPages().indexOf(page), dpi, imageType);
     }
 
     /**

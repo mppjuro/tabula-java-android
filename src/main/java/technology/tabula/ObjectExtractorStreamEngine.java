@@ -1,9 +1,9 @@
 package technology.tabula;
 
-import org.apache.pdfbox.cos.COSName;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImage;
+import com.tom_roush.pdfbox.cos.COSName;
+import com.tom_roush.pdfbox.pdmodel.PDPage;
+import com.tom_roush.pdfbox.pdmodel.common.PDRectangle;
+import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

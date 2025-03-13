@@ -6,14 +6,12 @@ import java.io.IOException;
 import java.util.*;
 
 import org.apache.commons.cli.*;
-import org.apache.pdfbox.Loader;
 import technology.tabula.*;
 import technology.tabula.detectors.NurminenDetectionAlgorithm;
 import technology.tabula.extractors.BasicExtractionAlgorithm;
 import technology.tabula.extractors.SpreadsheetExtractionAlgorithm;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import javax.imageio.ImageIO;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+
 
 public class Debug {
 
@@ -55,7 +53,7 @@ public class Debug {
     public static void renderPage(String pdfPath, String outPath, int pageNumber, Rectangle area,
                                   boolean drawTextChunks, boolean drawSpreadsheets, boolean drawRulings, boolean drawIntersections,
                                   boolean drawColumns, boolean drawDetectedTables) throws IOException {
-        PDDocument document = Loader.loadPDF(new File(pdfPath));
+        PDDocument document = PDDocument.load(new File(pdfPath));
         ObjectExtractor oe = new ObjectExtractor(document);
         Page page = oe.extract(pageNumber + 1);
 
